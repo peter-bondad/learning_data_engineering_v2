@@ -1,0 +1,86 @@
+# ================================
+
+# ENVIRONMENT
+
+# ================================
+
+.env
+.env.*
+!.env.example
+
+# ================================
+
+# PYTHON
+
+# ================================
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+
+.venv/
+venv/
+env/
+
+# ================================
+
+# AIRFLOW
+
+# ================================
+
+airflow/logs/
+airflow/dags/**pycache**/
+airflow/plugins/**pycache**/
+
+# Airflow local DB (if ever created)
+
+airflow/airflow.db
+
+# ================================
+
+# DOCKER
+
+# ================================
+
+*.log
+docker-compose.override.yml
+
+# ================================
+
+# DATABASE / VOLUMES
+
+# ================================
+
+postgres-db-volume/
+
+# ================================
+
+# TEST / COVERAGE
+
+# ================================
+
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ================================
+
+# IDE / EDITOR
+
+# ================================
+
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ================================
+
+# OS FILES
+
+# ================================
+
+.DS_Store
+Thumbs.db
