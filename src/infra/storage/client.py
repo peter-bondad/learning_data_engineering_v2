@@ -36,6 +36,8 @@ def upload_raw_data(data: list) -> str:
 
     now = datetime.now(timezone.utc)
 
+    # Use a structured key format for better organization and potential partitioning
+    # Format: raw/coin_cap/year=2024/month=01/day=01/HHMMSS.json
     key = (
         f"raw/coin_cap/"
         f"year={now.year}/"
@@ -44,6 +46,7 @@ def upload_raw_data(data: list) -> str:
         f"{now.strftime('%H%M%S')}.json"
     )
 
+    # Upload the data as JSON
     s3.put_object(
         Bucket=bucket,
         Key=key,
