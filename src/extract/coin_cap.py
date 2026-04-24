@@ -14,6 +14,7 @@ def fetch_coin_cap(api_key: str) -> list:
         raise ValueError("COIN_CAP_API_KEY is missing")
 
     url = "https://rest.coincap.io/v3/assets"
+    logger.info(f"Fetching data from {url}")
 
     for attempt in range(ATTEMPT_THRESHOLD):
         try:
@@ -27,6 +28,7 @@ def fetch_coin_cap(api_key: str) -> list:
                 raise ValueError("Unauthorized: invalid or missing API key")
 
             res.raise_for_status()
+            logger.info(f"Response status: {res.status_code}")
             break
 
         except ValueError:
@@ -39,13 +41,14 @@ def fetch_coin_cap(api_key: str) -> list:
             if 500 <= res.status_code < 600:
                 logger.warning(f"Server error on attempt {attempt + 1}: {e}")
             else:
-                raise
+                raise  # don't retry client errors
 
         sleep(2)
     else:
         raise RuntimeError("Failed after retries")
 
     raw_data = res.json().get("data", [])
+    logger.info(f"Raw response contains {len(raw_data)} records")
 
     valid = []
     invalid = 0
@@ -53,9 +56,13 @@ def fetch_coin_cap(api_key: str) -> list:
     for coin in raw_data:
         if any(field not in coin for field in COIN_CAP_FIELDS):
             invalid += 1
+            logger.debug(f"Skipping invalid record: {coin}")
             continue
         valid.append(coin)
 
     logger.info(f"Fetched {len(valid)} valid coins, {invalid} invalid")
 
+    # Log a few sample records for debugging
+    for coin in valid[:3]:
+        logger.debug(f"Sample coin: {coin}")
     return valid
