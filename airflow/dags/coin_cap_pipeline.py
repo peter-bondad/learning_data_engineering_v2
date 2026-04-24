@@ -2,7 +2,6 @@ from airflow import DAG
 from airflow.decorators import task
 from datetime import datetime, timedelta
 from airflow.models import Variable
-from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from src.logging.logger import get_logger
 from src.extract.coin_cap import fetch_coin_cap
@@ -23,28 +22,14 @@ default_args = {
 with DAG(
     dag_id="coin_cap_elt_pipeline",
     default_args=default_args,
-    description="CoinCap ELT Pipeline",
     schedule="@daily",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["elt", "coin_cap"],
 ) as dag:
 
-    # ✅ Operator = already a task
-    init_schema = PostgresOperator(
-        task_id="init_schema",
-        postgres_conn_id="postgres_default",
-        sql="/opt/airflow/src/sql/staging/coin_cap/schema.sql",
-    )
-
-    init_table = PostgresOperator(
-        task_id="init_coin_cap_table",
-        postgres_conn_id="postgres_default",
-        sql="/opt/airflow/src/sql/staging/coin_cap/coin_cap.sql",
-    )
-
     @task
-    def extract_task():
+    def extract_task() -> str:
         logging.getLogger("src.extract.coin_cap").setLevel(logging.DEBUG)
         logger.info("Starting extract task")
 
@@ -57,7 +42,7 @@ with DAG(
         return key
 
     @task
-    def load_task(key: str):
+    def load_task(key: str) -> None:
         logging.getLogger("src.load.coin_cap").setLevel(logging.DEBUG)
         logger.info(f"Starting load task for key: {key}")
 
@@ -66,6 +51,4 @@ with DAG(
         logger.info("Load complete")
 
     key = extract_task()
-
-    # ✅ Proper dependency chain
-    init_staging >> key >> load_task(key)
+    load_task(key)
