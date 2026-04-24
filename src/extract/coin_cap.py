@@ -45,7 +45,7 @@ def fetch_coin_cap(api_key: str) -> list:
 
         sleep(2)
     else:
-        raise RuntimeError("Failed after retries")
+        raise RuntimeError(f"Failed after {ATTEMPT_THRESHOLD} retries")
 
     raw_data = res.json().get("data", [])
     logger.info(f"Raw response contains {len(raw_data)} records")
