@@ -1,5 +1,4 @@
 from psycopg2 import connect
-import os
 from src.logging.logger import get_logger
 from src.utils.get_env import get_env
 
