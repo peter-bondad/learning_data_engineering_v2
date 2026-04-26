@@ -13,13 +13,13 @@ with DAG(
 
     init_schema = PostgresOperator(
     task_id="init_schema",
-    postgres_conn_id="postgres_default",
+    postgres_conn_id="analytics_postgres",
     sql="staging/coin_cap/schema.sql", # Relative path to the SQL file in the template_searchpath
     )
 
     init_table = PostgresOperator(
         task_id="init_coin_cap_table",
-        postgres_conn_id="postgres_default",
+        postgres_conn_id="analytics_postgres",
         sql="staging/coin_cap/coin_cap.sql", # Relative path to the SQL file in the template_searchpath
     )
 
