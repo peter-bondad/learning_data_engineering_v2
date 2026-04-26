@@ -18,17 +18,17 @@ CREATE_TABLE_SQL = """
         symbol     TEXT,
         name       TEXT,
         price_usd  NUMERIC,
-        loaded_at  TIMESTAMP DEFAULT NOW()
+        ingested_at  TIMESTAMP DEFAULT NOW()
     )
 """
 
 UPSERT_SQL = """
-    INSERT INTO staging.coin_cap (id, rank, symbol, name, price_usd, loaded_at)
+    INSERT INTO staging.coin_cap (id, rank, symbol, name, price_usd, ingested_at)
     VALUES (%s, %s, %s, %s, %s, NOW())
     ON CONFLICT (id) DO UPDATE SET
         rank      = EXCLUDED.rank,
         price_usd = EXCLUDED.price_usd,
-        loaded_at = EXCLUDED.loaded_at
+        ingested_at = EXCLUDED.ingested_at
 """
 
 def load(key: str):
@@ -51,8 +51,8 @@ def load(key: str):
                     cur.execute(UPSERT_SQL, (
                         coin["id"],
                         safe_int(coin.get("rank")),
-                        coin.get("name"),
                         coin.get("symbol"),
+                        coin.get("name"),
                         safe_float(coin.get("priceUsd")),
                     ))
                 except Exception as e:
