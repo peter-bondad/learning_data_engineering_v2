@@ -3,9 +3,16 @@ from src.infra.db.connection import db_connect
 from src.logging.logger import get_logger
 
 logger = get_logger(__name__)
+# This function handles null or empty values for integers, which can occur in the CoinCap API data. It ensures that we don't attempt to convert invalid strings to numbers, which would raise exceptions during the load process.
+def safe_int(v):
+    return int(v) if v not in (None, "", "null") else None
+
+# This function handles null or empty values for floats, similar to safe_int. It ensures that we can safely convert valid numeric strings to floats while gracefully handling invalid or missing data without causing exceptions.
+def safe_float(v):
+    return float(v) if v not in (None, "", "null") else None
 
 CREATE_TABLE_SQL = """
-    CREATE TABLE IF NOT EXISTS coin_cap (
+    CREATE TABLE IF NOT EXISTS staging.coin_cap (
         id         TEXT PRIMARY KEY,
         rank       INTEGER,
         symbol     TEXT,
@@ -16,7 +23,7 @@ CREATE_TABLE_SQL = """
 """
 
 UPSERT_SQL = """
-    INSERT INTO coin_cap (id, rank, symbol, name, price_usd, loaded_at)
+    INSERT INTO staging.coin_cap (id, rank, symbol, name, price_usd, loaded_at)
     VALUES (%s, %s, %s, %s, %s, NOW())
     ON CONFLICT (id) DO UPDATE SET
         rank      = EXCLUDED.rank,
@@ -40,14 +47,16 @@ def load(key: str):
             failed = []
             for coin in raw_data:
                 try:
+                    # coin["field name"] is used for required fields, while coin.get("field name") is used for optional fields that may be missing or null. This way, we can handle missing data gracefully without raising KeyError exceptions.
                     cur.execute(UPSERT_SQL, (
                         coin["id"],
-                        int(coin["rank"]),
-                        coin["symbol"],
-                        coin["name"],
-                        float(coin["priceUsd"]),
+                        safe_int(coin.get("rank")),
+                        coin.get("name"),
+                        coin.get("symbol"),
+                        safe_float(coin.get("priceUsd")),
                     ))
                 except Exception as e:
+                    conn.rollback()  # Rollback on individual record failure to maintain overall transaction integrity
                     failed.append((coin.get("id"), str(e)))
                     logger.warning(f"Failed to upsert coin {coin.get('id')}: {e}")
 
