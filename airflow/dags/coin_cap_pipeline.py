@@ -1,13 +1,12 @@
 from airflow import DAG
-from airflow.decorators import task
+from airflow.sdk import task, Variable
 from datetime import datetime, timedelta
-from airflow.models import Variable
 
 from src.logging.logger import get_logger
 from src.extract.coin_cap import fetch_coin_cap
 from src.infra.storage.client import upload_raw_data
 from src.load.coin_cap import load
-
+from src.config.settings import get_api_key
 import logging
 
 logger = get_logger(__name__)
@@ -33,7 +32,7 @@ with DAG(
         logging.getLogger("src.extract.coin_cap").setLevel(logging.DEBUG)
         logger.info("Starting extract task")
 
-        api_key = Variable.get("COIN_CAP_API_KEY")
+        api_key = get_api_key()
         coins = fetch_coin_cap(api_key)
 
         key = upload_raw_data(coins)
