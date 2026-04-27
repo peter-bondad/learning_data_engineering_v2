@@ -1,8 +1,11 @@
+import datetime
+
+from pydantic import ValidationError
 import requests
 from time import sleep
 
 from src.logging.logger import get_logger
-
+from src.schema.coin_cap import CoinCapSchema
 logger = get_logger(__name__)
 
 COIN_CAP_FIELDS = ["id", "rank", "symbol", "name", "priceUsd"]
@@ -54,15 +57,12 @@ def fetch_coin_cap(api_key: str) -> list:
     invalid = 0
 
     for coin in raw_data:
-        if any(field not in coin for field in COIN_CAP_FIELDS):
+        try: 
+            validated = CoinCapSchema(**coin, lastIngestedAt=datetime.utcnow()) # validate each record against the schema, adding a timestamp for when it was ingested. This ensures that we only process well-formed data and can track when each record was added to our system.
+            valid.append(validated.model_dump())
+        except ValidationError as e: # catch validation errors for individual records, log them, and continue processing the rest of the data. This way, we can still load valid records even if some are malformed.
             invalid += 1
-            logger.debug(f"Skipping invalid record: {coin}")
-            continue
-        valid.append(coin)
-
-    logger.info(f"Fetched {len(valid)} valid coins, {invalid} invalid")
-
-    # Log a few sample records for debugging
-    for coin in valid[:3]:
-        logger.debug(f"Sample coin: {coin}")
+            logger.warning(f"Validation failed for coin {coin.get('id', 'unknown')}: {e}")
+    logger.info(f"Validation complete: {len(valid)} valid, {invalid} invalid records") 
+    
     return valid
