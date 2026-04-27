@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
-class CoinCap(BaseModel):
+class CoinCapSchema(BaseModel):
     id: str
     rank: Optional[int]
     symbol: str
