@@ -1,3 +1,4 @@
+# This model aggregates the coin cap data by symbol, calculating the total number of records, average price in USD, minimum price in USD, and maximum price in USD for each cryptocurrency symbol. The results are ordered by average price in descending order.
 SELECT
 symbol,
 COUNT(*) as total_records,

@@ -1,8 +1,9 @@
+
 SELECT
-id,
-rank,
-symbol,
-name,
-price_usd,
-ingested_at
-FROM {{ source('staging', 'coin_cap') }}
+    id,
+    rank,
+    symbol,
+    name,
+    priceUsd::numeric AS price_usd,
+    CURRENT_TIMESTAMP AS ingested_at
+FROM {{ source('raw', 'coin_cap_raw') }}
