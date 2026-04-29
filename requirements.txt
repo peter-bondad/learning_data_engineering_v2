@@ -5,3 +5,4 @@ pydantic>=2.0,<3.0
 apache-airflow-providers-postgres==5.10.0
 dbt-core==1.7.9
 dbt-postgres==1.7.9
+protobuf>=4.21,<5
