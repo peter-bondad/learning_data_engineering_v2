@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_coin_cap
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+
+      - name: symbol
+        tests:
+          - not_null
+
+      - name: price_usd
+        tests:
+          - not_null
+
+      - name: ingested_at
+        tests:
+          - not_null
+      - name: rank
+        tests:
+          - not_null
