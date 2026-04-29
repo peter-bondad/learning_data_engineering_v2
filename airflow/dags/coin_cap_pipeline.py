@@ -1,5 +1,6 @@
 from airflow import DAG
-from airflow.sdk import task, Variable
+from airflow.sdk import task
+from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
 
 from src.logging.logger import get_logger
@@ -48,6 +49,17 @@ with DAG(
         load(key)
 
         logger.info("Load complete")
+        
+    dbt_run = BashOperator(
+        task_id="dbt_run",
+        bash_command="cd /opt/airflow/coin_cap_dbt && dbt run",
+    )
+
+    dbt_test = BashOperator(
+        task_id="dbt_test",
+        bash_command="cd /opt/airflow/coin_cap_dbt && dbt test",
+    )
 
     key = extract_task()
     load_task(key)
+    dbt_run >> dbt_test
