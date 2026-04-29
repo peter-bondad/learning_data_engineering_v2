@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: staging
+    database: postgres_db
+    schema: staging
+    tables:
+      - name: coin_cap
