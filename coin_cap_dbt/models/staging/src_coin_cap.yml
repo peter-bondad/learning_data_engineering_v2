@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: staging
-    database: postgres_db
+    database: airflow_db
     schema: staging
     tables:
       - name: coin_cap
