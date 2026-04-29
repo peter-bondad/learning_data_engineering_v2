@@ -1,1 +1,3 @@
 CREATE DATABASE airflow_db;
+CREATE DATABASE raw_db;
+CREATE DATABASE analytics_db;
