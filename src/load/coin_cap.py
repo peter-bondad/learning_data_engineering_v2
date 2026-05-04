@@ -1,3 +1,6 @@
+from decimal import Decimal
+from pathlib import Path
+
 from src.infra.storage.client import read_raw_data
 from src.infra.db.connection import db_connect
 from src.logging.logger import get_logger
@@ -7,69 +10,57 @@ logger = get_logger(__name__)
 def safe_int(v):
     return int(v) if v not in (None, "", "null") else None
 
-# This function handles null or empty values for floats, similar to safe_int. It ensures that we can safely convert valid numeric strings to floats while gracefully handling invalid or missing data without causing exceptions.
-def safe_float(v):
-    return float(v) if v not in (None, "", "null") else None
+# This function handles null or empty values for decimals, similar to safe_int. It ensures that we can safely convert valid numeric strings to decimals while gracefully handling invalid or missing data without causing exceptions.
+def safe_decimal(v):
+    return Decimal(v) if v not in (None, "", "null") else None
 
-CREATE_TABLE_SQL = """
-    CREATE TABLE IF NOT EXISTS staging.coin_cap (
-        id         TEXT PRIMARY KEY,
-        rank       INTEGER,
-        symbol     TEXT,
-        name       TEXT,
-        price_usd  NUMERIC,
-        ingested_at  TIMESTAMP DEFAULT NOW()
-    )
-"""
+SQL_PATH = Path(__file__).resolve().parents[2] / "infra/sql/raw/coin_cap.sql"
 
-UPSERT_SQL = """
-    INSERT INTO staging.coin_cap (id, rank, symbol, name, price_usd, ingested_at)
-    VALUES (%s, %s, %s, %s, %s, NOW())
-    ON CONFLICT (id) DO UPDATE SET
-        rank      = EXCLUDED.rank,
-        price_usd = EXCLUDED.price_usd,
-        ingested_at = EXCLUDED.ingested_at
+# This function ensures that the raw schema for the coin cap data exists in the database. 
+# It reads the SQL schema definition from a file and executes it against the database connection. This is a crucial step to ensure that the target table for loading data is properly set up before we attempt to insert any records.
+def ensure_raw_schema(conn):
+    with open(SQL_PATH) as f:
+        conn.execute(f.read())
+
+INSERT_SQL = """
+    INSERT INTO raw.coin_cap_raw (id, rank, symbol, name, price_usd, ingested_at)
+        VALUES (%s, %s, %s, %s, %s, NOW())
 """
 
 def load(key: str):
     logger.info(f"Starting load from MinIO key: {key}")
 
     raw_data = read_raw_data(key)
-    logger.info(f"Read {len(raw_data)} records from MinIO")
+    logger.info(f"Read {len(raw_data)} records")
 
     conn = db_connect()
 
     try:
+        ensure_raw_schema(conn)
+
+        # We prepare the records for upsert by converting the raw data into a list of tuples that match the expected format of the database table. 
+        # The safe_int and safe_decimal functions are used to handle any potential issues with null or invalid values in the rank and priceUsd fields, ensuring that we can safely insert or update records without encountering exceptions due to data quality issues.
+        records = [
+            (
+                coin["id"],
+                safe_int(coin.get("rank")),
+                coin.get("symbol"),
+                coin.get("name"),
+                safe_decimal(coin.get("priceUsd")),
+            )
+            for coin in raw_data
+        ]
+
         with conn.cursor() as cur:
-            cur.execute(CREATE_TABLE_SQL)
-            logger.info("Table ensured: staging.coin_cap")
+            cur.executemany(INSERT_SQL, records)
 
-            failed = []
-            for coin in raw_data:
-                try:
-                    # coin["field name"] is used for required fields, while coin.get("field name") is used for optional fields that may be missing or null. This way, we can handle missing data gracefully without raising KeyError exceptions.
-                    cur.execute(UPSERT_SQL, (
-                        coin["id"],
-                        safe_int(coin.get("rank")),
-                        coin.get("symbol"),
-                        coin.get("name"),
-                        safe_float(coin.get("priceUsd")),
-                    ))
-                except Exception as e:
-                    conn.rollback()  # Rollback on individual record failure to maintain overall transaction integrity
-                    failed.append((coin.get("id"), str(e)))
-                    logger.warning(f"Failed to upsert coin {coin.get('id')}: {e}")
-
-            conn.commit()
-            logger.info(f"Upserted {len(raw_data) - len(failed)} records successfully")
-
-            if failed:
-                logger.warning(f"{len(failed)} records failed: {failed}")
+        conn.commit()
+        logger.info(f"Inserted {len(records)} records successfully")
 
     except Exception as e:
         conn.rollback()
-        logger.error(f"Load failed — rolled back: {e}")
+        logger.error(f"Load failed: {e}")
         raise
+
     finally:
         conn.close()
-        logger.info("Database connection closed")
