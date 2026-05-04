@@ -1,0 +1,10 @@
+CREATE SCHEMA IF NOT EXISTS raw;
+
+CREATE TABLE IF NOT EXISTS raw.coin_cap_raw (
+    id VARCHAR(50) PRIMARY KEY,
+    rank INTEGER,
+    symbol VARCHAR(10),
+    name VARCHAR(100),
+    price_usd NUMERIC(20,8),
+    ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
