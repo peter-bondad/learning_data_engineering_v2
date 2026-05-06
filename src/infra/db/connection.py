@@ -12,7 +12,7 @@ def db_connect():
             port=get_env("POSTGRES_PORT"),
             user=get_env("POSTGRES_USER"),
             password=get_env("POSTGRES_PASSWORD"),
-            dbname=get_env("POSTGRES_DB"),
+            dbname=get_env("ANALYTICS_DB") or get_env("POSTGRES_DB"),
         )
     except Exception as e:
         logger.error(f"Failed to connect to the database: {e}")
