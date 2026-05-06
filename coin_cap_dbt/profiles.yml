@@ -1,0 +1,12 @@
+coin_cap_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: airflow
+      password: airflow
+      dbname: analytics_db
+      schema: staging
+      threads: 4

@@ -1,8 +1,8 @@
 version: 2
 
 sources:
-  - name: staging
-    database: airflow_db
-    schema: staging
+  - name: raw
+    database: analytics_db
+    schema: raw
     tables:
-      - name: coin_cap
+      - name: coin_cap_raw
