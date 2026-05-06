@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.sdk import task
+from airflow.decorators  import task
 from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
 
@@ -52,14 +52,14 @@ with DAG(
         
     dbt_run = BashOperator(
         task_id="dbt_run",
-        bash_command="cd /opt/airflow/coin_cap_dbt && dbt run",
+        bash_command="dbt run --project-dir /opt/airflow/coin_cap_dbt",
     )
 
     dbt_test = BashOperator(
         task_id="dbt_test",
-        bash_command="cd /opt/airflow/coin_cap_dbt && dbt test",
+        bash_command="dbt test --project-dir /opt/airflow/coin_cap_dbt",
     )
 
     key = extract_task()
-    load_task(key)
-    dbt_run >> dbt_test
+    load_result = load_task(key)
+    load_result >> dbt_run >> dbt_test
