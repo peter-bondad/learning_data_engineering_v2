@@ -24,7 +24,7 @@ def ensure_raw_schema(conn):
 
 INSERT_SQL = """
     INSERT INTO raw.coin_cap_raw (id, rank, symbol, name, price_usd, ingested_at)
-        VALUES (%s, %s, %s, %s, %s, NOW())
+        VALUES (%s, %s, %s, %s, %s, %s)
 """
 
 def load(key: str):
@@ -47,6 +47,7 @@ def load(key: str):
                 coin.get("symbol"),
                 coin.get("name"),
                 safe_decimal(coin.get("priceUsd")),
+                coin.get("lastIngestedAt"),
             )
             for coin in raw_data
         ]
