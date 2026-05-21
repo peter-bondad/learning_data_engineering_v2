@@ -46,7 +46,7 @@ def fetch_coin_cap(api_key: str) -> list:
             else:
                 raise  # don't retry client errors
 
-        sleep(2)
+        sleep(2) # simple backoff before retrying (2 seconds)
     else:
         raise RuntimeError(f"Failed after {ATTEMPT_THRESHOLD} retries")
 
